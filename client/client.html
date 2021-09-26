@@ -7,10 +7,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
 
-  //set upp http request
+  const getUsersBtn = document.querySelector('#getUsers');
+  const nameForm = document.querySelector('#nameForm');
 
   const responseHandler = (xhr)=>{
     const content = document.querySelector('#content');
+    console.log(xhr.status);
     switch (xhr.status) {
         case 200: //if success
           content.innerHTML = `<b>Success</b>`;
@@ -24,6 +26,9 @@
         case 404: //if not found
           content.innerHTML = `<b>Resource Not Found</b>`;
           break;
+        case 204: //if not found
+          content.innerHTML = `<b>Update Existed User</b>`;
+          break;      
         default: //any other status
           content.innerHTML = `Error code not implemented by client.`;
           break;
@@ -37,7 +42,7 @@
         content.innerHTML += '<p>Meta Data Recieved</p>';
       }
   }
-  const clickHandler = ()=>{
+  const sendGet = (e)=>{
       const requestMethod = document.querySelector('#methodSelect').value;
       const url = document.querySelector('#urlField').value;
 
@@ -46,14 +51,59 @@
       const xhr = new XMLHttpRequest();
       xhr.open(requestMethod, url);
 
-      xhr.setRequestHeader("Accept", contentType);
+      xhr.setRequestHeader('Accept', 'application/json');
 
       xhr.onload = ()=> responseHandler(xhr);
 
+      e.preventDefault();
       xhr.send();
   }
-
-  sendBtn.addEventListener('click', clickHandler);
+  const sendPost = (e, nameForm) => {
+      //grab the forms action (url to go to)
+      //and method (HTTP method - POST in this case)
+      const nameAction = nameForm.getAttribute('action');
+      const nameMethod = nameForm.getAttribute('method');
+      
+      //grab the form's name and age fields so we can check user input
+      const nameField = nameForm.querySelector('#nameField');
+      const ageField = nameForm.querySelector('#ageField');
+      
+      //create a new Ajax request (remember this is asynchronous)
+      const xhr = new XMLHttpRequest();
+      //set the method (POST) and url (action field from form)
+      xhr.open(nameMethod, nameAction);
+      
+      //set our request type to x-www-form-urlencoded
+      //which is one of the common types of form data. 
+      //This type has the same format as query strings key=value&key2=value2
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      //set our requested response type in hopes of a JSON response
+      xhr.setRequestHeader ('Accept', 'application/json');
+      
+      //set our function to handle the response
+      xhr.onload = ()=> responseHandler(xhr);
+      
+      //build our x-www-form-urlencoded format. Without ajax the 
+      //browser would do this automatically but it forcefully changes pages
+      //which we don't want.
+      //The format is the same as query strings, so key=value&key2=value2
+      //The 'name' fields from the inputs are the variable names sent to
+      //the server. 
+      //So ours might look like  name=test&age=22
+      //Again the 'name' fields in the form are the variable names in the string
+      //and the variable names the server will look for.
+      const formData = `name=${nameField.value}&age=${ageField.value}`;
+      
+      //send our request with the data
+      xhr.send(formData);
+    
+      //prevent the browser's default action (to send the form on its own)
+      e.preventDefault();
+      //return false to prevent the browser from trying to change page
+      return false;
+  };
+  getUsersBtn.addEventListener('click', (e)=>{sendGet(e)});
+  nameForm.addEventListener('submit', (e)=>{sendPost(e,nameForm)});
 
   
   </script>
@@ -66,7 +116,7 @@
       <input id="nameField" type="text" name="name" />
       <label for="age">Age: </label>
       <input id="ageField" type="number" name="age" min="0" max="100" step="1"/>
-      <input type="submit" value="Add User" />
+      <input id="addUsers" type="submit" value="Add User" />
     </form>
     <form id="userForm" action="/getUsers" method="get">
       <select id='urlField'>
@@ -77,7 +127,7 @@
         <option value="get">GET</option>
         <option value="head">HEAD</option>
       </select>
-      <input type="submit" value="Get User" />
+      <input id="getUsers"type="submit" value="Get User" />
     </form>
   </section>
   <section id="content">

@@ -1,5 +1,44 @@
-const userData = [{ name: 'Duy', age: '22' }];
+const userData = {};
+const writeMetaData = (resquest, response, statusCode) => {
+  response.writeHead(statusCode, 'Content-Type: application/json');
+  response.end();
+};
+const writeResponse = (request, response, statusCode, object) => {
+  response.writeHead(statusCode, 'Content-Type: application/json');
+  response.write(JSON.stringify(object));
+  response.end();
+};
+const addUser = (request, response, userParams) => {
+  // if missing parameter
+  let message;
+  if (!userParams.name || !userParams.age) {
+    message = {
+      message: 'POST request failed: Missing Parameters',
+    };
+    writeResponse(request, response, 400, message);
+    return;
+  }
+  // update exist user
+  if (userData[userParams.name]) {
+    userData[userParams.name].name = userParams.name;
+    userData[userParams.name].age = userParams.age;
+    writeMetaData(request, response, 204);
+    return;
+  }
 
+  // create new user
+  userData[userParams.name] = {
+    name: `${userParams.name}`,
+    age: userParams.age,
+  };
+  message = {
+    message: `User ${userParams.name} Created`,
+  };
+  console.log(message);
+  writeResponse(request, response, 201, message);
+};
+
+// return a javascript obj
 const getUsers = () => {
   const users = {
     userData,
@@ -10,22 +49,17 @@ let object;
 const getResponse = (request, response, pathName) => {
   switch (pathName) {
     case '/getUsers':
+      console.log('Cased Handled: checked');
       object = getUsers();
-      response.writeHead(200, 'Content-Type: application/json');
-      response.write(JSON.stringify(userData));
-      response.end();
+      writeResponse(request, response, 200, object);
       break;
-    case '/notReal':
+    default:
+      // not real
       object = {
         id: 'NotFound',
         message: 'No resource has been found',
       };
-      response.writeHead(404, 'Content-Type: application/json');
-      response.write(JSON.stringify(object));
-      response.end();
-      break;
-    default:
-      console.log('Unexpected Error at Url PathName');
+      writeResponse(request, response, 404, object);
       break;
   }
 };
@@ -33,12 +67,10 @@ const getResponse = (request, response, pathName) => {
 const getMetaData = (request, response, pathName) => {
   switch (pathName) {
     case '/getUsers':
-      response.writeHead(200, 'Content-Type: application/json');
-      response.end();
+      writeMetaData(request, response, 200);
       break;
     case '/notReal':
-      response.writeHead(404, 'Content-Type: application/json');
-      response.end();
+      writeMetaData(request, response, 404);
       break;
     default:
       console.log('Unexpected Error at Url PathName (metadata)');
@@ -49,5 +81,6 @@ const getMetaData = (request, response, pathName) => {
 module.exports = {
   getResponse,
   getMetaData,
+  addUser,
 
 };
